@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Namastay — Live KPI Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f7f6f3; color: #1a1a1a; min-height: 100vh; }
+
+  header { background: #fff; border-bottom: 1px solid #e8e6e0; padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+  .logo span { color: #3266ad; }
+  .last-updated { font-size: 12px; color: #888; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+  #config-banner { background: #fff8ec; border: 1px solid #f0c060; border-radius: 10px; padding: 20px 24px; margin-bottom: 28px; font-size: 14px; }
+  #config-banner strong { display: block; margin-bottom: 4px; font-size: 15px; }
+  #config-banner p { color: #666; margin-bottom: 14px; font-size: 13px; line-height: 1.6; }
+  #config-banner input { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: monospace; background: #fff; margin-top: 4px; }
+  .field-label { font-size: 12px; color: #777; margin-top: 10px; display: block; }
+  #config-banner button { margin-top: 16px; background: #1a1a1a; color: #fff; border: none; border-radius: 6px; padding: 10px 22px; font-size: 13px; cursor: pointer; }
+  #config-banner button:hover { background: #333; }
+  .hint { font-size: 11px; color: #bbb; margin-top: 5px; }
+
+  .metrics { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px; margin-bottom: 28px; }
+  .metric { background: #fff; border-radius: 12px; border: 1px solid #e8e6e0; padding: 20px; }
+  .metric-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .metric-value { font-size: 26px; font-weight: 600; color: #1a1a1a; line-height: 1; }
+  .metric-sub { font-size: 12px; color: #bbb; margin-top: 6px; }
+  .metric.signed .metric-value { color: #d85a30; }
+  .metric.live .metric-value { color: #3266ad; }
+
+  .chart-card { background: #fff; border-radius: 12px; border: 1px solid #e8e6e0; padding: 24px; margin-bottom: 20px; }
+  .chart-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .chart-title { font-size: 14px; font-weight: 600; }
+  .chart-sub { font-size: 12px; color: #aaa; margin-top: 3px; }
+  .legend { display: flex; gap: 16px; align-items: center; }
+  .legend span { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .chart-wrap { position: relative; width: 100%; height: 280px; }
+
+  #loading { text-align: center; padding: 80px 24px; display: none; }
+  .spinner { width: 32px; height: 32px; border: 3px solid #e8e6e0; border-top-color: #3266ad; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading p { font-size: 13px; color: #999; }
+
+  #error-box { background: #fff0f0; border: 1px solid #fcc; border-radius: 10px; padding: 16px 20px; margin-bottom: 24px; font-size: 13px; color: #c00; display: none; line-height: 1.6; }
+
+  #dashboard { display: none; }
+
+  .reset-link { font-size: 12px; color: #aaa; text-decoration: underline; cursor: pointer; margin-left: 12px; }
+
+  footer { text-align: center; font-size: 11px; color: #ccc; padding: 32px; }
+
+  @media (max-width: 640px) {
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    header { flex-direction: column; gap: 6px; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">namastay<span>.</span></div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="last-updated" id="last-updated">—</div>
+    <span class="reset-link" id="reset-link" style="display:none;" onclick="resetToken()">Reset token</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <div id="config-banner">
+    <strong>⚙️ One-time setup</strong>
+    <p>Enter your Slack user token to connect the dashboard. It's saved in your browser — you only do this once.<br>
+    To get your token: go to <strong>api.slack.com/apps</strong> → create or open an app → OAuth & Permissions → add scope <code>channels:history</code> → Install to workspace → copy the <strong>User OAuth Token</strong>.</p>
+    <label class="field-label">Slack User OAuth Token (xoxp-...)</label>
+    <input type="password" id="slack-input" placeholder="xoxp-..." autocomplete="off" />
+    <div class="hint">Stored locally in your browser only. Never sent to any server except Slack.</div>
+    <button onclick="saveAndLoad()">Connect & Load Dashboard</button>
+  </div>
+
+  <div id="error-box"></div>
+  <div id="loading"><div class="spinner"></div><p id="loading-msg">Fetching messages…</p></div>
+
+  <div id="dashboard">
+    <div class="metrics">
+      <div class="metric signed">
+        <div class="metric-label">ACV signed (YTD)</div>
+        <div class="metric-value" id="m-signed">—</div>
+        <div class="metric-sub" id="m-signed-sub">—</div>
+      </div>
+      <div class="metric live">
+        <div class="metric-label">ACV gone live (YTD)</div>
+        <div class="metric-value" id="m-live">—</div>
+        <div class="metric-sub" id="m-live-sub">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Pipeline gap</div>
+        <div class="metric-value" id="m-gap">—</div>
+        <div class="metric-sub">signed, not yet live</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Hotels live (total)</div>
+        <div class="metric-value" id="m-total">—</div>
+        <div class="metric-sub" id="m-total-sub">—</div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">ACV signed vs gone live — weekly</div>
+          <div class="chart-sub">€/year · #namastay-only Friday Refresher · Jan 2026 onwards</div>
+        </div>
+        <div class="legend">
+          <span><span class="legend-dot" style="background:#d85a30;"></span>Signed</span>
+          <span><span class="legend-dot" style="background:#3266ad;"></span>Gone live</span>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="acvChart"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Hotels signed vs implemented — weekly</div>
+          <div class="chart-sub">Count of hotels per week</div>
+        </div>
+        <div class="legend">
+          <span><span class="legend-dot" style="background:#d85a30;"></span>Signed</span>
+          <span><span class="legend-dot" style="background:#3266ad;"></span>Implemented</span>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="countChart"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<footer>Namastay KPI Dashboard · Refreshes on every page load · Data from #namastay-only</footer>
+
+<script>
+const CHANNEL_ID = 'C0366DJBN1K';
+const STORAGE_KEY = 'nms_slack_token';
+const START_TS   = '1767225600'; // 2026-01-01 00:00 UTC
+
+let chartAcv = null, chartCount = null;
+const $  = id => document.getElementById(id);
+
+// ── Token management ─────────────────────────────────────────────────────────
+function getToken()  { return localStorage.getItem(STORAGE_KEY) || ''; }
+function resetToken(){ localStorage.removeItem(STORAGE_KEY); location.reload(); }
+
+function saveAndLoad() {
+  const t = $('slack-input').value.trim();
+  if (!t.startsWith('xoxp-') && !t.startsWith('xoxb-')) {
+    alert('Token must start with xoxp- or xoxb-. Please check and try again.');
+    return;
+  }
+  localStorage.setItem(STORAGE_KEY, t);
+  $('config-banner').style.display = 'none';
+  run();
+}
+
+// ── UI helpers ───────────────────────────────────────────────────────────────
+function showError(msg) {
+  $('loading').style.display = 'none';
+  $('error-box').style.display = 'block';
+  $('error-box').innerHTML = `<strong>Error:</strong> ${msg}`;
+}
+
+function setLoading(msg) {
+  $('loading-msg').textContent = msg;
+  $('loading').style.display  = 'block';
+  $('dashboard').style.display = 'none';
+  $('error-box').style.display = 'none';
+}
+
+// ── Slack fetch ──────────────────────────────────────────────────────────────
+async function fetchMessages(token) {
+  const resp = await fetch(
+    `https://slack.com/api/conversations.history?channel=${CHANNEL_ID}&oldest=${START_TS}&limit=100`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const data = await resp.json();
+  if (!data.ok) throw new Error(`Slack: ${data.error}. Make sure your token has the <strong>channels:history</strong> scope and can access #namastay-only.`);
+  return data.messages
+    .filter(m => m.text && m.text.includes('Friday Refresher'))
+    .sort((a, b) => parseFloat(a.ts) - parseFloat(b.ts));
+}
+
+// ── Parser — reads the consistent Friday Refresher format ────────────────────
+function parseWeek(msg) {
+  const text = msg.text;
+  const date = new Date(parseFloat(msg.ts) * 1000);
+  const week_label = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+  // Hotels signed: "2 hotels signed this week" / "0 hotel signed"
+  const sm = text.match(/(\d+)\s+hotels?\s+signed\s+this\s+week/i);
+  const signed_hotels = sm ? +sm[1] : 0;
+
+  // Hotels implemented: "4 hotels implemented this week"
+  const im = text.match(/(\d+)\s+hotels?\s+implemented\s+this\s+week/i);
+  const implemented_hotels = im ? +im[1] : 0;
+
+  // Total live: "244 hotels LIVE"
+  const lm = text.match(/(\d+)\s+hotels?\s+LIVE/i);
+  const total_hotels_live = lm ? +lm[1] : null;
+
+  // ACV fields — will be populated once posts include them (future-proof)
+  // Patterns: "12,000€ ACV" / "€12000 ACV" / "12000 ACV"
+  const acvNum = s => { const m = s && s.match(/[\d,]+/); return m ? +m[0].replace(/,/g,'') : 0; };
+  const acvS = text.match(/signed[^•\n]*?(\d[\d,.]*)\s*€?\s*ACV/i);
+  const acvL = text.match(/(?:live|implemented)[^•\n]*?(\d[\d,.]*)\s*€?\s*ACV/i);
+  const signed_acv = acvNum(acvS && acvS[1]);
+  const live_acv   = acvNum(acvL && acvL[1]);
+
+  return { week_label, signed_hotels, implemented_hotels, total_hotels_live, signed_acv, live_acv };
+}
+
+// ── Format helpers ───────────────────────────────────────────────────────────
+const fmtAcv = v => v >= 1000 ? `€${Math.round(v/1000)}K` : v ? `€${v}` : '—';
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function render(weeks) {
+  const totSigned  = weeks.reduce((s,w)=>s+w.signed_hotels, 0);
+  const totImpl    = weeks.reduce((s,w)=>s+w.implemented_hotels, 0);
+  const totAcvSig  = weeks.reduce((s,w)=>s+w.signed_acv, 0);
+  const totAcvLive = weeks.reduce((s,w)=>s+w.live_acv, 0);
+  const last = weeks[weeks.length-1] || {};
+  const hasAcv = totAcvSig > 0 || totAcvLive > 0;
+
+  // Metrics
+  $('m-signed').textContent    = hasAcv ? fmtAcv(totAcvSig)  : `${totSigned}`;
+  $('m-signed-sub').textContent= hasAcv ? `${totSigned} hotels` : 'hotels signed · ACV coming soon';
+  $('m-live').textContent      = hasAcv ? fmtAcv(totAcvLive) : `${totImpl}`;
+  $('m-live-sub').textContent  = hasAcv ? `${totImpl} hotels` : 'hotels live · ACV coming soon';
+  $('m-gap').textContent       = hasAcv ? fmtAcv(Math.max(0, totAcvSig-totAcvLive)) : `${Math.max(0,totSigned-totImpl)}`;
+  $('m-total').textContent     = last.total_hotels_live ?? '—';
+  $('m-total-sub').textContent = `as of ${last.week_label ?? '—'}`;
+
+  const labels   = weeks.map(w=>w.week_label);
+  const sAcv     = weeks.map(w=>w.signed_acv);
+  const lAcv     = weeks.map(w=>w.live_acv);
+  const sCnt     = weeks.map(w=>w.signed_hotels);
+  const lCnt     = weeks.map(w=>w.implemented_hotels);
+
+  const baseOpts = {
+    responsive:true, maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{display:false}, ticks:{autoSkip:false,maxRotation:40,font:{size:11},color:'#aaa'}},
+      y:{beginAtZero:true, grid:{color:'rgba(0,0,0,0.05)'}, ticks:{font:{size:11},color:'#aaa'}}
+    }
+  };
+
+  if (chartAcv)   chartAcv.destroy();
+  if (chartCount) chartCount.destroy();
+
+  chartAcv = new Chart($('acvChart'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      {label:'ACV signed',    data:sAcv, backgroundColor:'#d85a30', borderRadius:4, barPercentage:0.42, categoryPercentage:0.85},
+      {label:'ACV gone live', data:lAcv, backgroundColor:'#3266ad', borderRadius:4, barPercentage:0.42, categoryPercentage:0.85}
+    ]},
+    options:{...baseOpts,
+      plugins:{...baseOpts.plugins, tooltip:{callbacks:{label:c=>` ${c.dataset.label}: €${c.parsed.y.toLocaleString()}`}}},
+      scales:{...baseOpts.scales, y:{...baseOpts.scales.y, ticks:{...baseOpts.scales.y.ticks, callback:v=>fmtAcv(v)}}}
+    }
+  });
+
+  chartCount = new Chart($('countChart'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      {label:'Hotels signed',      data:sCnt, backgroundColor:'#d85a30', borderRadius:4, barPercentage:0.42, categoryPercentage:0.85},
+      {label:'Hotels implemented', data:lCnt, backgroundColor:'#3266ad', borderRadius:4, barPercentage:0.42, categoryPercentage:0.85}
+    ]},
+    options:{...baseOpts,
+      plugins:{...baseOpts.plugins, tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y}`}}}
+    }
+  });
+
+  $('loading').style.display   = 'none';
+  $('dashboard').style.display = 'block';
+  $('reset-link').style.display = 'inline';
+  $('last-updated').textContent = `Updated ${new Date().toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`;
+}
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+async function run() {
+  const token = getToken();
+  if (!token) { $('config-banner').style.display='block'; return; }
+
+  try {
+    setLoading('Fetching #namastay-only messages…');
+    const msgs = await fetchMessages(token);
+    if (!msgs.length) throw new Error('No Friday Refresher posts found since Jan 1 2026 in #namastay-only.');
+    setLoading(`Parsing ${msgs.length} weekly updates…`);
+    render(msgs.map(parseWeek));
+  } catch(e) {
+    console.error(e);
+    showError(e.message || String(e));
+  }
+}
+
+// Hide config banner if token already saved
+if (getToken()) { $('config-banner').style.display='none'; run(); }
+else            { $('config-banner').style.display='block'; $('loading').style.display='none'; }
+</script>
+</body>
+</html>
