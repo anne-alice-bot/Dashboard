@@ -13,21 +13,25 @@
   .logo span { color: #3266ad; }
   .meta { font-size: 12px; color: #aaa; }
   .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
   .metrics { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px; margin-bottom: 28px; }
   .metric { background: #fff; border-radius: 12px; border: 1px solid #e8e6e0; padding: 20px; }
   .metric-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
   .metric-value { font-size: 26px; font-weight: 600; line-height: 1; }
   .metric-sub { font-size: 12px; color: #bbb; margin-top: 6px; }
-  .signed .metric-value { color: #d85a30; }
-  .live .metric-value { color: #3266ad; }
+  .signed .metric-value { color: #f4a620; }
+  .live .metric-value   { color: #3266ad; }
+  .churn .metric-value  { color: #e63946; }
+
   .chart-card { background: #fff; border-radius: 12px; border: 1px solid #e8e6e0; padding: 24px; margin-bottom: 20px; }
   .chart-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
   .chart-title { font-size: 14px; font-weight: 600; }
   .chart-sub { font-size: 12px; color: #aaa; margin-top: 3px; }
-  .legend { display: flex; gap: 16px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; }
   .legend span { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666; }
   .dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-  .chart-wrap { position: relative; width: 100%; height: 280px; }
+  .chart-wrap { position: relative; width: 100%; height: 320px; }
+
   footer { text-align: center; font-size: 11px; color: #ccc; padding: 32px; }
   @media (max-width: 640px) {
     .metrics { grid-template-columns: repeat(2,1fr); }
@@ -43,21 +47,22 @@
 </header>
 
 <div class="container">
+
   <div class="metrics">
     <div class="metric signed">
       <div class="metric-label">Hotels signed (YTD)</div>
       <div class="metric-value" id="m-signed">—</div>
-      <div class="metric-sub" id="m-signed-sub">—</div>
+      <div class="metric-sub">hotels signed YTD</div>
     </div>
     <div class="metric live">
       <div class="metric-label">Hotels implemented (YTD)</div>
       <div class="metric-value" id="m-impl">—</div>
-      <div class="metric-sub" id="m-impl-sub">—</div>
+      <div class="metric-sub">hotels implemented YTD</div>
     </div>
-    <div class="metric">
-      <div class="metric-label">Pipeline gap</div>
-      <div class="metric-value" id="m-gap">—</div>
-      <div class="metric-sub">signed not yet live</div>
+    <div class="metric churn">
+      <div class="metric-label">Hotels churned (YTD)</div>
+      <div class="metric-value" id="m-churn">—</div>
+      <div class="metric-sub">hotels lost YTD</div>
     </div>
     <div class="metric">
       <div class="metric-label">Hotels live (total)</div>
@@ -74,128 +79,181 @@
       <div class="metric-value" id="m-acv-live">—</div>
       <div class="metric-sub">annual contract value</div>
     </div>
-    <div class="metric">
-      <div class="metric-label">ACV pipeline gap</div>
-      <div class="metric-value" id="m-acv-gap">—</div>
-      <div class="metric-sub">signed not yet live</div>
+    <div class="metric churn">
+      <div class="metric-label">Total ACV churned (YTD)</div>
+      <div class="metric-value" id="m-acv-churn">—</div>
+      <div class="metric-sub">annual contract value lost</div>
     </div>
     <div class="metric">
-      <div class="metric-label">Avg ACV per hotel signed</div>
-      <div class="metric-value" id="m-acv-avg">—</div>
-      <div class="metric-sub" id="m-acv-avg-sub">—</div>
+      <div class="metric-label">Net ACV (live − churn)</div>
+      <div class="metric-value" id="m-acv-net">—</div>
+      <div class="metric-sub">YTD net impact</div>
     </div>
   </div>
 
   <div class="chart-card">
     <div class="chart-header">
       <div>
-        <div class="chart-title">Hotels signed vs implemented — weekly</div>
-        <div class="chart-sub">Count of hotels · #namastay-only Friday Refresher · Jan 2026 onwards</div>
+        <div class="chart-title">ACV signed · gone live · churned — weekly</div>
+        <div class="chart-sub">€/year (bars) · Hotels live total (green line) · #namastay-only · Jan 2026 onwards</div>
       </div>
       <div class="legend">
-        <span><span class="dot" style="background:#d85a30"></span>Signed</span>
-        <span><span class="dot" style="background:#3266ad"></span>Implemented</span>
+        <span><span class="dot" style="background:#f4a620"></span>ACV signed</span>
+        <span><span class="dot" style="background:#3266ad"></span>ACV gone live</span>
+        <span><span class="dot" style="background:#e63946"></span>ACV churned</span>
+        <span><span class="dot" style="background:#2a9d5c;border-radius:50%"></span>Hotels live</span>
       </div>
     </div>
-    <div class="chart-wrap"><canvas id="countChart"></canvas></div>
+    <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
   </div>
 
-  <div class="chart-card">
-    <div class="chart-header">
-      <div>
-        <div class="chart-title">ACV signed vs gone live — weekly</div>
-        <div class="chart-sub">€/year · ACV populated once Friday Refresher includes per-hotel figures</div>
-      </div>
-      <div class="legend">
-        <span><span class="dot" style="background:#d85a30"></span>Signed</span>
-        <span><span class="dot" style="background:#3266ad"></span>Gone live</span>
-      </div>
-    </div>
-    <div class="chart-wrap"><canvas id="acvChart"></canvas></div>
-  </div>
 </div>
 
-<footer>Namastay KPI Dashboard · Data from #namastay-only · Last refreshed by Claude on 18 Mar 2026</footer>
+<footer>Namastay KPI Dashboard · Last refreshed by Claude on 20 Mar 2026 · Data from #namastay-only</footer>
 
 <script>
-// ── DATA — hardcoded from #namastay-only Friday Refresher posts ──────────────
+// ── DATA ─────────────────────────────────────────────────────────────────────
 // To update: ask Claude to "refresh the KPI dashboard" — it reads Slack and regenerates this file.
-
 const weeks = [
-  { label: '2 Jan',  signed: 2,  impl: 1,  total: 240, signed_acv: 9000,   live_acv: 0     },
-  { label: '9 Jan',  signed: 0,  impl: 4,  total: 244, signed_acv: 0,      live_acv: 11760 },
-  { label: '16 Jan', signed: 3,  impl: 1,  total: 246, signed_acv: 9600,   live_acv: 6000  },
-  { label: '23 Jan', signed: 0,  impl: 2,  total: 245, signed_acv: 0,      live_acv: 17616 },
-  { label: '30 Jan', signed: 4,  impl: 2,  total: 245, signed_acv: 13200,  live_acv: 23280 },
-  { label: '6 Feb',  signed: 0,  impl: 7,  total: 258, signed_acv: 0,      live_acv: 56832 },
-  { label: '13 Feb', signed: 5,  impl: 0,  total: 261, signed_acv: 21000,  live_acv: 0     },
-  { label: '20 Feb', signed: 1,  impl: 2,  total: 262, signed_acv: 4800,   live_acv: 10200 },
-  { label: '27 Feb', signed: 2,  impl: 3,  total: 261, signed_acv: 5472,   live_acv: 11016 },
-  { label: '6 Mar',  signed: 18, impl: 3,  total: 264, signed_acv: 7800,   live_acv: 15552 },
-  { label: '13 Mar', signed: 7,  impl: 2,  total: 261, signed_acv: 36600,  live_acv: 12276 },
+  { label: '2 Jan',  signed_acv: 9000,  live_acv: 0,     churn_acv: 0,     total: 240 },
+  { label: '9 Jan',  signed_acv: 0,     live_acv: 11760, churn_acv: 0,     total: 244 },
+  { label: '16 Jan', signed_acv: 9600,  live_acv: 6000,  churn_acv: 0,     total: 246 },
+  { label: '23 Jan', signed_acv: 0,     live_acv: 17616, churn_acv: 0,     total: 245 },
+  { label: '30 Jan', signed_acv: 13200, live_acv: 23280, churn_acv: 0,     total: 245 },
+  { label: '6 Feb',  signed_acv: 0,     live_acv: 56832, churn_acv: 0,     total: 258 },
+  { label: '13 Feb', signed_acv: 21000, live_acv: 0,     churn_acv: 25560, total: 261 }, // La Gavina 5400 + Sea Diamond 6000 + Nice Azur 480 + Prospect 6000 + Foster Supply x4 7680
+  { label: '20 Feb', signed_acv: 4800,  live_acv: 10200, churn_acv: 3000,  total: 262 }, // Stockton Inn 3000
+  { label: '27 Feb', signed_acv: 5472,  live_acv: 11016, churn_acv: 6996,  total: 261 }, // The Cove Long Beach 6996
+  { label: '6 Mar',  signed_acv: 7800,  live_acv: 15552, churn_acv: 0,     total: 264 },
+  { label: '13 Mar', signed_acv: 36600, live_acv: 12276, churn_acv: 0,     total: 261 },
+  { label: '20 Mar', signed_acv: 0,     live_acv: 4200,  churn_acv: 12000, total: 261 }, // Duchi d'Aosta 6000 + El Roblar 6000
 ];
 
-// ── Metrics ──────────────────────────────────────────────────────────────────
-const totSigned = weeks.reduce((s,w) => s + w.signed, 0);
-const totImpl   = weeks.reduce((s,w) => s + w.impl, 0);
-const totAcvS   = weeks.reduce((s,w) => s + w.signed_acv, 0);
-const totAcvL   = weeks.reduce((s,w) => s + w.live_acv, 0);
-const last      = weeks[weeks.length - 1];
+// hotel counts for metrics
+const hotelCounts = [
+  { signed: 2,  impl: 1,  churn: 0 },
+  { signed: 0,  impl: 4,  churn: 0 },
+  { signed: 3,  impl: 1,  churn: 0 },
+  { signed: 0,  impl: 2,  churn: 0 },
+  { signed: 4,  impl: 2,  churn: 0 },
+  { signed: 0,  impl: 7,  churn: 0 },
+  { signed: 5,  impl: 0,  churn: 8 },
+  { signed: 1,  impl: 2,  churn: 1 },
+  { signed: 2,  impl: 3,  churn: 1 },
+  { signed: 18, impl: 3,  churn: 0 },
+  { signed: 7,  impl: 2,  churn: 0 },
+  { signed: 0,  impl: 1,  churn: 2 },
+];
 
-const fmtAcv = v => v >= 1000 ? `€${Math.round(v/1000)}K` : `€${v}`;
+// ── Metrics ───────────────────────────────────────────────────────────────────
+const totSigned    = hotelCounts.reduce((s,w) => s + w.signed, 0);
+const totImpl      = hotelCounts.reduce((s,w) => s + w.impl,   0);
+const totChurn     = hotelCounts.reduce((s,w) => s + w.churn,  0);
+const totAcvSigned = weeks.reduce((s,w) => s + w.signed_acv, 0);
+const totAcvLive   = weeks.reduce((s,w) => s + w.live_acv,   0);
+const totAcvChurn  = weeks.reduce((s,w) => s + w.churn_acv,  0);
+const last         = weeks[weeks.length - 1];
 
-document.getElementById('m-signed').textContent     = totSigned;
-document.getElementById('m-signed-sub').textContent = `hotels signed YTD`;
-document.getElementById('m-impl').textContent       = totImpl;
-document.getElementById('m-impl-sub').textContent   = `hotels implemented YTD`;
-document.getElementById('m-gap').textContent        = Math.max(0, totSigned - totImpl);
-document.getElementById('m-total').textContent      = last.total;
-document.getElementById('m-total-sub').textContent  = `as of ${last.label}`;
-document.getElementById('m-acv-signed').textContent = fmtAcv(totAcvS);
-document.getElementById('m-acv-live').textContent   = fmtAcv(totAcvL);
-document.getElementById('m-acv-gap').textContent    = fmtAcv(Math.max(0, totAcvS - totAcvL));
-document.getElementById('m-acv-avg').textContent    = totSigned ? fmtAcv(Math.round(totAcvS / totSigned)) : '—';
-document.getElementById('m-acv-avg-sub').textContent = `across ${totSigned} hotels`;
-document.getElementById('meta').textContent         = `Last refreshed 18 Mar 2026 · ${weeks.length} weeks tracked`;
+const fmt = v => v >= 1000 ? `€${Math.round(v/1000)}K` : `€${v}`;
 
-// ── Charts ───────────────────────────────────────────────────────────────────
+document.getElementById('m-signed').textContent    = totSigned;
+document.getElementById('m-impl').textContent      = totImpl;
+document.getElementById('m-churn').textContent     = totChurn;
+document.getElementById('m-total').textContent     = last.total;
+document.getElementById('m-total-sub').textContent = `as of ${last.label}`;
+document.getElementById('m-acv-signed').textContent = fmt(totAcvSigned);
+document.getElementById('m-acv-live').textContent   = fmt(totAcvLive);
+document.getElementById('m-acv-churn').textContent  = fmt(totAcvChurn);
+document.getElementById('m-acv-net').textContent    = fmt(totAcvLive - totAcvChurn);
+document.getElementById('meta').textContent         = `Last refreshed 20 Mar 2026 · ${weeks.length} weeks tracked`;
+
+// ── Chart ─────────────────────────────────────────────────────────────────────
 const labels = weeks.map(w => w.label);
 
-const baseOpts = {
-  responsive: true, maintainAspectRatio: false,
-  interaction: { mode: 'index', intersect: false },
-  plugins: { legend: { display: false } },
-  scales: {
-    x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 40, font: { size: 11 }, color: '#aaa' } },
-    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, color: '#aaa' } }
-  }
-};
-
-new Chart(document.getElementById('countChart'), {
+new Chart(document.getElementById('mainChart'), {
   type: 'bar',
   data: {
     labels,
     datasets: [
-      { label: 'Signed',      data: weeks.map(w => w.signed), backgroundColor: '#d85a30', borderRadius: 4, barPercentage: 0.42, categoryPercentage: 0.85 },
-      { label: 'Implemented', data: weeks.map(w => w.impl),   backgroundColor: '#3266ad', borderRadius: 4, barPercentage: 0.42, categoryPercentage: 0.85 }
-    ]
-  },
-  options: { ...baseOpts, plugins: { ...baseOpts.plugins, tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y} hotel${c.parsed.y !== 1 ? 's' : ''}` } } } }
-});
-
-new Chart(document.getElementById('acvChart'), {
-  type: 'bar',
-  data: {
-    labels,
-    datasets: [
-      { label: 'ACV signed',    data: weeks.map(w => w.signed_acv), backgroundColor: '#d85a30', borderRadius: 4, barPercentage: 0.42, categoryPercentage: 0.85 },
-      { label: 'ACV gone live', data: weeks.map(w => w.live_acv),   backgroundColor: '#3266ad', borderRadius: 4, barPercentage: 0.42, categoryPercentage: 0.85 }
+      {
+        label: 'ACV signed',
+        data: weeks.map(w => w.signed_acv),
+        backgroundColor: '#f4a620',
+        borderRadius: 4,
+        barPercentage: 0.5,
+        categoryPercentage: 0.8,
+        order: 2
+      },
+      {
+        label: 'ACV gone live',
+        data: weeks.map(w => w.live_acv),
+        backgroundColor: '#3266ad',
+        borderRadius: 0,
+        barPercentage: 0.5,
+        categoryPercentage: 0.8,
+        stack: 'deployed',
+        order: 2
+      },
+      {
+        label: 'ACV churned',
+        data: weeks.map(w => w.churn_acv),
+        backgroundColor: '#e63946',
+        borderRadius: 4,
+        barPercentage: 0.5,
+        categoryPercentage: 0.8,
+        stack: 'deployed',
+        order: 2
+      },
+      {
+        label: 'Hotels live',
+        data: weeks.map(w => w.total),
+        type: 'line',
+        borderColor: '#2a9d5c',
+        backgroundColor: '#2a9d5c',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        tension: 0.3,
+        borderWidth: 2.5,
+        fill: false,
+        yAxisID: 'y2',
+        order: 1
+      }
     ]
   },
   options: {
-    ...baseOpts,
-    plugins: { ...baseOpts.plugins, tooltip: { callbacks: { label: c => ` ${c.dataset.label}: €${c.parsed.y.toLocaleString()}` } } },
-    scales: { ...baseOpts.scales, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => fmtAcv(v) } } }
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ctx.dataset.label === 'Hotels live'
+            ? ` Hotels live: ${ctx.parsed.y}`
+            : ` ${ctx.dataset.label}: €${ctx.parsed.y.toLocaleString()}`
+        }
+      }
+    },
+    scales: {
+      x: {
+        stacked: true,
+        grid: { display: false },
+        ticks: { autoSkip: false, maxRotation: 40, font: { size: 11 }, color: '#aaa' }
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        position: 'left',
+        grid: { color: 'rgba(0,0,0,0.05)' },
+        ticks: { font: { size: 11 }, color: '#aaa', callback: v => fmt(v) }
+      },
+      y2: {
+        beginAtZero: false,
+        position: 'right',
+        grid: { drawOnChartArea: false },
+        ticks: { font: { size: 11 }, color: '#2a9d5c', callback: v => v + ' 🏨' }
+      }
+    }
   }
 });
 </script>
