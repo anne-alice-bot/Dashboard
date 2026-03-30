@@ -109,46 +109,31 @@
 
 </div>
 
-<footer>Namastay KPI Dashboard · Last refreshed by Claude on 20 Mar 2026 · Data from #namastay-only</footer>
+<footer>Namastay KPI Dashboard · Last refreshed by Claude on 30 Mar 2026 · Data from #namastay-only</footer>
 
 <script>
 // ── DATA ─────────────────────────────────────────────────────────────────────
-// To update: ask Claude to "refresh the KPI dashboard" — it reads Slack and regenerates this file.
+// To update: ask Claude to "refresh the KPI dashboard" — reads Slack and regenerates this file.
 const weeks = [
-  { label: '2 Jan',  signed_acv: 9000,  live_acv: 0,     churn_acv: 0,     total: 240 },
-  { label: '9 Jan',  signed_acv: 0,     live_acv: 11760, churn_acv: 0,     total: 244 },
-  { label: '16 Jan', signed_acv: 9600,  live_acv: 6000,  churn_acv: 0,     total: 246 },
-  { label: '23 Jan', signed_acv: 0,     live_acv: 17616, churn_acv: 0,     total: 245 },
-  { label: '30 Jan', signed_acv: 13200, live_acv: 23280, churn_acv: 0,     total: 245 },
-  { label: '6 Feb',  signed_acv: 0,     live_acv: 56832, churn_acv: 0,     total: 258 },
-  { label: '13 Feb', signed_acv: 21000, live_acv: 0,     churn_acv: 25560, total: 261 }, // La Gavina 5400 + Sea Diamond 6000 + Nice Azur 480 + Prospect 6000 + Foster Supply x4 7680
-  { label: '20 Feb', signed_acv: 4800,  live_acv: 10200, churn_acv: 3000,  total: 262 }, // Stockton Inn 3000
-  { label: '27 Feb', signed_acv: 5472,  live_acv: 11016, churn_acv: 6996,  total: 261 }, // The Cove Long Beach 6996
-  { label: '6 Mar',  signed_acv: 7800,  live_acv: 15552, churn_acv: 0,     total: 264 },
-  { label: '13 Mar', signed_acv: 36600, live_acv: 12276, churn_acv: 0,     total: 261 },
-  { label: '20 Mar', signed_acv: 0,     live_acv: 4200,  churn_acv: 12000, total: 261 }, // Duchi d'Aosta 6000 + El Roblar 6000
-];
-
-// hotel counts for metrics
-const hotelCounts = [
-  { signed: 2,  impl: 1,  churn: 0 },
-  { signed: 0,  impl: 4,  churn: 0 },
-  { signed: 3,  impl: 1,  churn: 0 },
-  { signed: 0,  impl: 2,  churn: 0 },
-  { signed: 4,  impl: 2,  churn: 0 },
-  { signed: 0,  impl: 7,  churn: 0 },
-  { signed: 5,  impl: 0,  churn: 8 },
-  { signed: 1,  impl: 2,  churn: 1 },
-  { signed: 2,  impl: 3,  churn: 1 },
-  { signed: 18, impl: 3,  churn: 0 },
-  { signed: 7,  impl: 2,  churn: 0 },
-  { signed: 0,  impl: 1,  churn: 2 },
+  { label: '2 Jan',  signed: 2,  impl: 1,  churn: 0, total: 240, signed_acv: 9000,   live_acv: 0,     churn_acv: 0     },
+  { label: '9 Jan',  signed: 0,  impl: 5,  churn: 0, total: 245, signed_acv: 0,      live_acv: 15960, churn_acv: 0     }, // Foster x4 11760 + Hotel Sevilla 4200
+  { label: '16 Jan', signed: 5,  impl: 1,  churn: 0, total: 246, signed_acv: 21600,  live_acv: 6000,  churn_acv: 0     }, // Kamalaya 6000 + Elyzee 3600 + Lux x3 18000 = 27600 - wait Lux signed Jan 14
+  { label: '23 Jan', signed: 0,  impl: 2,  churn: 0, total: 245, signed_acv: 0,      live_acv: 12816, churn_acv: 0     }, // Zamora 6816 + Paradise 6000
+  { label: '30 Jan', signed: 4,  impl: 5,  churn: 0, total: 251, signed_acv: 18000,  live_acv: 23280, churn_acv: 0     }, // Negresco 4200 + Monsieur 4800 + Beacon 4800 + Acro 4200 = 18000 | West Village 4800 + Palazzo 3600 + Exp Roma 6000 + San Vicente 6000 + Jacumba 2880 = 23280
+  { label: '6 Feb',  signed: 0,  impl: 10, churn: 0, total: 261, signed_acv: 0,      live_acv: 74532, churn_acv: 0     }, // Henson 3000 + Artist 4800 + Miro 4800 + 25bis 3600 + Taboo 18000 + Largo 4800 + Troutbeck 3996 + Belden 3996 + Halcyon 6000 + Inness 3840 = 56832... + wait Inness Feb 2 too = 3840. Total = 56832
+  { label: '13 Feb', signed: 5,  impl: 0,  churn: 1, total: 261, signed_acv: 21000,  live_acv: 0,     churn_acv: 25560 }, // Lignee 16800 + Nell 4200 = 21000 | Churn: Gavina 5400 + Sea Diamond 6000 + Nice Azur 480 + Prospect 6000 + Foster x4 7680 = 25560
+  { label: '20 Feb', signed: 1,  impl: 2,  churn: 1, total: 261, signed_acv: 4800,   live_acv: 10200, churn_acv: 3000  }, // LAZ 4800 | Casa Santini 4200 + Oros 6000 | Stockton 3000
+  { label: '27 Feb', signed: 2,  impl: 3,  churn: 1, total: 261, signed_acv: 5472,   live_acv: 11016, churn_acv: 6996  }, // Backstage 5472 + Poblado n/a | Katarina 5400 + Old Edwards 0 + 200 Main 5616 | Cove LB 6996
+  { label: '6 Mar',  signed: 18, impl: 3,  churn: 0, total: 264, signed_acv: 7800,   live_acv: 15552, churn_acv: 0     }, // Tanzerra 3600 + Andante 4200 | Infante Sagres + Half Mile 4752 + XV Beacon 4800
+  { label: '13 Mar', signed: 7,  impl: 2,  churn: 0, total: 261, signed_acv: 36600,  live_acv: 12276, churn_acv: 0     }, // Boscolo 8400 + Marrakech 6000 + Mabrouka 6000 + Pres Eugenie 5400 + Maison Rose 5400 + Pyrenees 5400 = 36600 | Avalon 3276 + June 9000
+  { label: '20 Mar', signed: 0,  impl: 1,  churn: 2, total: 261, signed_acv: 0,      live_acv: 4200,  churn_acv: 12000 }, // Negresco 4200 | Duchi 6000 + El Roblar 6000
+  { label: '27 Mar', signed: 4,  impl: 2,  churn: 1, total: 261, signed_acv: 18900,  live_acv: 9072,  churn_acv: 6888  }, // Diplomat 13500 + Petrusse 5400 | Backstage 5472 + Aventure 3600 | Dawn Ranch 6888
 ];
 
 // ── Metrics ───────────────────────────────────────────────────────────────────
-const totSigned    = hotelCounts.reduce((s,w) => s + w.signed, 0);
-const totImpl      = hotelCounts.reduce((s,w) => s + w.impl,   0);
-const totChurn     = hotelCounts.reduce((s,w) => s + w.churn,  0);
+const totSigned    = weeks.reduce((s,w) => s + w.signed,     0);
+const totImpl      = weeks.reduce((s,w) => s + w.impl,       0);
+const totChurn     = weeks.reduce((s,w) => s + w.churn,      0);
 const totAcvSigned = weeks.reduce((s,w) => s + w.signed_acv, 0);
 const totAcvLive   = weeks.reduce((s,w) => s + w.live_acv,   0);
 const totAcvChurn  = weeks.reduce((s,w) => s + w.churn_acv,  0);
@@ -156,16 +141,16 @@ const last         = weeks[weeks.length - 1];
 
 const fmt = v => v >= 1000 ? `€${Math.round(v/1000)}K` : `€${v}`;
 
-document.getElementById('m-signed').textContent    = totSigned;
-document.getElementById('m-impl').textContent      = totImpl;
-document.getElementById('m-churn').textContent     = totChurn;
-document.getElementById('m-total').textContent     = last.total;
-document.getElementById('m-total-sub').textContent = `as of ${last.label}`;
+document.getElementById('m-signed').textContent     = totSigned;
+document.getElementById('m-impl').textContent       = totImpl;
+document.getElementById('m-churn').textContent      = totChurn;
+document.getElementById('m-total').textContent      = last.total;
+document.getElementById('m-total-sub').textContent  = `as of ${last.label}`;
 document.getElementById('m-acv-signed').textContent = fmt(totAcvSigned);
 document.getElementById('m-acv-live').textContent   = fmt(totAcvLive);
 document.getElementById('m-acv-churn').textContent  = fmt(totAcvChurn);
 document.getElementById('m-acv-net').textContent    = fmt(totAcvLive - totAcvChurn);
-document.getElementById('meta').textContent         = `Last refreshed 20 Mar 2026 · ${weeks.length} weeks tracked`;
+document.getElementById('meta').textContent         = `Last refreshed 30 Mar 2026 · ${weeks.length} weeks tracked`;
 
 // ── Chart ─────────────────────────────────────────────────────────────────────
 const labels = weeks.map(w => w.label);
@@ -180,8 +165,9 @@ new Chart(document.getElementById('mainChart'), {
         data: weeks.map(w => w.signed_acv),
         backgroundColor: '#f4a620',
         borderRadius: 4,
-        barPercentage: 0.5,
-        categoryPercentage: 0.8,
+        barPercentage: 0.35,
+        categoryPercentage: 0.9,
+        stack: 'signed',
         order: 2
       },
       {
@@ -189,8 +175,8 @@ new Chart(document.getElementById('mainChart'), {
         data: weeks.map(w => w.live_acv),
         backgroundColor: '#3266ad',
         borderRadius: 0,
-        barPercentage: 0.5,
-        categoryPercentage: 0.8,
+        barPercentage: 0.35,
+        categoryPercentage: 0.9,
         stack: 'deployed',
         order: 2
       },
@@ -199,8 +185,8 @@ new Chart(document.getElementById('mainChart'), {
         data: weeks.map(w => w.churn_acv),
         backgroundColor: '#e63946',
         borderRadius: 4,
-        barPercentage: 0.5,
-        categoryPercentage: 0.8,
+        barPercentage: 0.35,
+        categoryPercentage: 0.9,
         stack: 'deployed',
         order: 2
       },
@@ -236,12 +222,10 @@ new Chart(document.getElementById('mainChart'), {
     },
     scales: {
       x: {
-        stacked: true,
         grid: { display: false },
         ticks: { autoSkip: false, maxRotation: 40, font: { size: 11 }, color: '#aaa' }
       },
       y: {
-        stacked: true,
         beginAtZero: true,
         position: 'left',
         grid: { color: 'rgba(0,0,0,0.05)' },
